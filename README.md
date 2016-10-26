@@ -7,6 +7,7 @@ ssh-expect is a scripting solution that automates boring server jobs
 
 expectssh can be used to auto   mate installs, configure servers and almost anything that can be done in an interactive terminal.
 
+    (require "ssh-subprocess.rkt")
     [ssh-script "myAwesomeServerbox" "mybox.coolservers.com" "bob" "sekretpassword"
                             [lambda [] 
                               [send ssh set-echo-to-stdout #t]
@@ -20,6 +21,18 @@ Note that this is a standard racket program, so you can run any racket command i
 # Manual intervention
 
 expectssh monitors STDIN, so you can type into STDIN while expectssh is running any script, and your keystrokes will be sent to the server.  This is incredibly useful during a long script, when there is an unexpected prompt on the server that stops your script e.g. "Continue(y/n)".  You can press "y" and the script will continue.
+
+You can also use expectssh to log into a server and start a mysql session, then take control and type commands directly into mysql.
+
+# Starting a script
+
+    [ssh-script "server name" "server ip address or full dns name" "login name" "login password" thunk]
+
+as in the example, connect to a server and run the script defined in thunk.
+
+    [ssh-command "server address" "login name" "login password" "command"]
+
+logs into a server, runs "command", and returns the transcript of the session.
 
 # Basic commands
 
@@ -72,3 +85,9 @@ The ssh object in the script has many useful methods.
     [send ssh set-echo-to-stdout #t]
 
 Echoes your session to stdout
+
+    [send ssh get-transcript]
+
+expectssh keeps a log of everything the server sends.  You can extract the results of commands from this
+
+
