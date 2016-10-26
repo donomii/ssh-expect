@@ -275,7 +275,7 @@
   (class object%
     (init )                ; initialization argument
     
-    (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [transmitter-thread #f] [transcript ""] [echo-to-stdout #f] [timeout 60]) ; field
+    (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [transmitter-thread #f] [transcript ""] [echo-to-stdout #f] [timeout 120]) ; field
   [debug "Created ssh object"]
     (super-new)                ; superclass initialization
 [define/public set-echo-to-stdout [lambda [a-boolean] [set! echo-to-stdout a-boolean]]]
@@ -491,7 +491,8 @@
                              [waitforsecs [first a-pair] 1]]
                           [begin [send ssh clear-transcript][sn [second a-pair]] [return #t]]
                          ]] some-opts]
-                                                                 [sleep 1]      [options some-opts]]]]]
+                                                                 [sleep 1]
+                                                                            [options some-opts]]]]]
               
               [this-server ,a-server]
               [root-prompt [format "root@~a" ,a-server]]
