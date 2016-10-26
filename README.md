@@ -91,3 +91,4 @@ Echoes your session to stdout
 expectssh keeps a log of everything the server sends.  You can extract the results of commands from this
 
 
+FIXME: Document options command
