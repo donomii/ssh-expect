@@ -135,7 +135,7 @@
                                                                                             [a-callback stuff]
                                                                                             [display stuff transcript-port]
                                                                                             ]
-                                                                                          [sleep 0.001]
+                                                                                          ;[sleep 0.001]  FIXME?
                                                                                           [readloop]]]]
                                                                        [readloop]
                                                                        
@@ -143,20 +143,7 @@
                                                                      [debug "Receiver thread shutting down"]
                                                                      #t
                                                                      ]]]]
-  [define slave-port-num 3000]
-  [define incport [lambda [] [set! slave-port-num [add1 slave-port-num]] slave-port-num]]
-  (define slave-mode (make-parameter #f))
-  (define listen-port (make-parameter 1024))
-  [define lp #f]
-  (command-line
-   #:once-each
-   [("-s" "--slave") "Start in command slave mode"
-                     (slave-mode #t)]
-   [("-p" "--port") lp ; flag takes one argument
-                    "Listen on <lp> port"
-                    (listen-port [string->number lp])]
-   
-   )
+  
   
   
   [define-macro [eval-in-this-context a-form] 
