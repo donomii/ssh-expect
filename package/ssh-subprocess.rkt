@@ -113,36 +113,39 @@
         
         #""]]
   
-  [define make-transmitter-thread [lambda [a-chan] 
-                                    [thread  [lambda args
-                                               [letrec [[printloop [lambda []
-                                                                     [let [[line [read-line]]]
-                                                                       [transmit-string a-chan [format "~a~a~n"  line #\return]]
-                                                                       [printloop]
-                                                                       ] ]]]
-                                                 [printloop]
-                                                 ]
-                                               [display "Transmitter thread shutting down"]
-                                               #t
-                                               ]]]]
+  [define make-transmitter-thread
+    [lambda [a-chan] 
+      [thread  [lambda args
+                 [letrec [[printloop [lambda []
+                                       [let [[line [read-line]]]
+                                         [transmit-string a-chan [format "~a~a~n"  line #\return]]
+                                         [printloop]
+                                         ] ]]]
+                   [printloop]
+                   ]
+                 [display "Transmitter thread shutting down"]
+                 #t
+                 ]]]]
   
-  [define make-receiver-thread [lambda [a-chan a-callback][thread  [lambda args
-                                                                     [debug "Starting receiver"]
-                                                                     [letrec [[readloop [lambda []
-                                                                                          [let [[stuff [format "~a" [receive-string a-chan]]]]
-                                                                                            ;[display stuff stream-out]
-                                                                                            ;[set! transcript [string-append transcript stuff]]
-                                                                                            [a-callback stuff]
-                                                                                            [display stuff transcript-port]
-                                                                                            ]
-                                                                                          ;[sleep 0.001]  FIXME?
-                                                                                          [readloop]]]]
-                                                                       [readloop]
-                                                                       
-                                                                       ]
-                                                                     [debug "Receiver thread shutting down"]
-                                                                     #t
-                                                                     ]]]]
+  [define make-receiver-thread
+    [lambda [a-chan a-callback]
+      [thread  [lambda args
+                 [debug "Starting receiver"]
+                 [letrec [[readloop [lambda []
+                                      [let [[stuff [format "~a" [receive-string a-chan]]]]
+                                        ;[display stuff stream-out]
+                                        ;[set! transcript [string-append transcript stuff]]
+                                        [a-callback stuff]
+                                        [display stuff transcript-port]
+                                        ]
+                                      ;[sleep 0.001]  FIXME?
+                                      [readloop]]]]
+                   [readloop]
+                   
+                   ]
+                 [debug "Receiver thread shutting down"]
+                 #t
+                 ]]]]
   
   
   
@@ -167,17 +170,6 @@
         [let [[cmd [format "/usr/bin/ssh -t -t   ~a@~a" a-user a-server-address]]]
           [display cmd][newline]
           [set! procvals [process cmd]]]
-        
-        
-        ;    [write [read-line [first procvals]] ][newline]
-        ;    [write [read-line [first procvals]] ][newline]
-        ;    [write [read-line [first procvals]] ][newline]
-        ;    [write [read-line [first procvals]] ][newline]
-        ;    [write [read-line [first procvals]] ][newline]
-        ;    [write [read-line [first procvals]] ][newline]
-        ;    [write [read-line [first procvals]] ][newline]
-        ;    [write [read-line [first procvals]] ][newline]
-        ; [write [read-line [fourth procvals]] ][newline]
         [write  [[fifth procvals] 'status] ][newline]
         [displayln "Connecting to remote server"]
         [set! writeport [second procvals]]
@@ -187,15 +179,20 @@
         (file-stream-buffer-mode writeport 'none)
         ;[displayln password writeport]
         [displayln "Wrapper setup complete"]
-        [set! receiver-thread [make-receiver-thread readport [lambda [a-string] 
-                                                               [when echo-to-stdout
-                                                                 [begin
-                                                                   ;[when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]]
-                                                                   [display [remove-escapes a-string]]]]
-                                                               [set! transcript [string-append transcript a-string]]]]]
-        [set! receiver-thread [make-receiver-thread [fourth procvals] [lambda [a-string] 
-                                                                        ;[when echo-to-stdout [begin [when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]][display [remove-escapes a-string]]]]
-                                                                        [set! transcript [string-append transcript a-string]]]]]
+        [set! receiver-thread
+              [make-receiver-thread readport
+                                    [lambda [a-string] 
+                                      [when echo-to-stdout
+                                        [begin
+                                          ;[when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]]
+                                          [display [remove-escapes a-string]]]]
+                                      [set! transcript [string-append transcript a-string]]]]]
+        [set! receiver-thread
+              [make-receiver-thread
+               [fourth procvals]
+               [lambda [a-string] 
+                 ;[when echo-to-stdout [begin [when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]][display [remove-escapes a-string]]]]
+                 [set! transcript [string-append transcript a-string]]]]]
         [set! transmitter-thread [make-transmitter-thread writeport]]
         )
       
@@ -206,26 +203,28 @@
                              
                              ]]
       [define/public [clear-transcript] [set! transcript ""]#t]
-      [define/public send-string  [lambda [a-string]
-                                    
-                                    [[thunk
-                                      [when [not writeport]
-                                        [error "You must call new_session first!"]]
-                                      [debug [format "Sending ~s" a-string]]
-                                      [display a-string writeport]]]
-                                    ;[ssh_channel_write chan [format "~n"] [string-length [format "~n"]] ]
-                                    #t]
+      [define/public send-string
+        [lambda [a-string]
+          
+          [[thunk
+            [when [not writeport]
+              [error "You must call new_session first!"]]
+            [debug [format "Sending ~s" a-string]]
+            [display a-string writeport]]]
+          ;[ssh_channel_write chan [format "~n"] [string-length [format "~n"]] ]
+          #t]
         ]
-      [define/public send-bytes  [lambda [a-bytes]
-                                   
-                                   [[thunk
-                                     [when [not writeport]
-                                       [error "You must call new_session first!"]]
-                                     [debug [format "Sending ~s" a-bytes]]
-                                     [display a-bytes writeport]]]
-                                   ;[ssh_channel_write chan [format "~n"] [string-length [format "~n"]] ]
-                                   #t 
-                                   ]
+      [define/public send-bytes
+        [lambda [a-bytes]
+          
+          [[thunk
+            [when [not writeport]
+              [error "You must call new_session first!"]]
+            [debug [format "Sending ~s" a-bytes]]
+            [display a-bytes writeport]]]
+          ;[ssh_channel_write chan [format "~n"] [string-length [format "~n"]] ]
+          #t 
+          ]
         ]
       
       
@@ -242,12 +241,14 @@
                  [send ssh new_session a-server a-user a-password] 
                  ssh]]]
   
-  [define ssh-command [lambda [host user pass command]
-                        [ssh-script "aaa" host user pass [thunk 
-                                                          [sn command] 
-                                                          [wsn "assword:" pass] 
-                                                          [sleep 15]
-                                                          [send ssh get-transcript]]]]]
+  [define ssh-command
+    [lambda [host user pass command]
+      [ssh-script "aaa" host user pass
+                  [thunk 
+                   [sn command] 
+                   [wsn "assword:" pass] 
+                   [sleep 15]
+                   [send ssh get-transcript]]]]]
   
   ;ssh-script - Opens a ssh connection using the details provided, and binds a number of handy functions for scripting
   ;
@@ -282,11 +283,12 @@
               [sb [lambda [a-string] [send ssh send-bytes a-string]]]
               [sn [lambda [a-string] [s a-string][s [format "~n"]]]]
               
-              [waitforsecs [lambda [a-string a-time][if [< a-time 0]
-                                                        [error [format "Timeout waiting for string ~s~n" a-string]]
-                                                        [begin
-                                                          [unless [regexp-match a-string [send ssh get-transcript]] 
-                                                            [begin [sleep 0.1][waitforsecs a-string [- a-time 0.1]]]]]]]]
+              [waitforsecs [lambda [a-string a-time]
+                             [if [< a-time 0]
+                                 [error [format "Timeout waiting for string ~s~n" a-string]]
+                                 [begin
+                                   [unless [regexp-match a-string [send ssh get-transcript]] 
+                                     [begin [sleep 0.1][waitforsecs a-string [- a-time 0.1]]]]]]]]
               [waitfor [lambda [a-string][waitforsecs a-string [get-field  timeout  ssh]]]]
               [wsn [lambda [a-string a-nother-string]
                      [if [waitfor a-string]
