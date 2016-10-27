@@ -158,29 +158,33 @@
     (class object%
       (init )                ; initialization argument
       
-      (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [transmitter-thread #f] [transcript ""] [echo-to-stdout #t][conn-sleep 0.001][timeout 20][procvals #f][writeport #f][readport #f][killfunc #f]) ; field
+      (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [transmitter-thread #f] [transcript ""] [echo-to-stdout #t][conn-sleep 0.001]
+             [timeout 20][procvals #f][writeport #f][readport #f][killfunc #f]) ; field
       [debug "Created ssh object"]
       (super-new)                ; superclass initialization
       [define/public set-echo-to-stdout [lambda [a-boolean] [set! echo-to-stdout a-boolean]]]
-      [define/public timeout [lambda [a-number] [set! timeout a-number]]]
+      [define/public set-timeout [lambda [a-number] [set! timeout a-number]]]
       [define/public read-sleep [lambda [a-number] [set! conn-sleep a-number]]]
       
       (define/public (new_session a-server-address a-user a-password  )
         ""
         ;[let [[cmd [format "package\\sshbin\\bin\\ssh.exe -o PreferredAuthentications=keyboard-interactive  ~a@~a" a-user a-server-address]]]
         ;[let [[cmd [format "\"c:\\Program Files (x86)\\PuTTY\\plink.exe\"   ~a@~a" a-user a-server-address]]]
-        [let [[cmd [format "/usr/bin/ssh -t -t   ~a@~a" a-user a-server-address]]]
+        [let [[cmd
+               [if [or [equal? [system-type 'os] 'unix] [equal? [system-type 'os] 'macosx]]
+                   [format "/usr/bin/ssh -t -t   ~a@~a" a-user a-server-address]
+                   [format "\"c:\\Program Files (x86)\\PuTTY\\plink.exe\"   ~a@~a" a-user a-server-address]]]]
           [display cmd][newline]
           [set! procvals [process cmd]]]
         [write  [[fifth procvals] 'status] ][newline]
-        [displayln "Connecting to remote server"]
+        [debug "Connecting to remote server"]
         [set! writeport [second procvals]]
         [set! readport [first procvals]]
         [set! killfunc [fifth procvals]]
         (file-stream-buffer-mode readport 'none)
         (file-stream-buffer-mode writeport 'none)
         ;[displayln password writeport]
-        [displayln "Wrapper setup complete"]
+        [debug "Wrapper setup complete"]
         [set! receiver-thread
               [make-receiver-thread readport
                                     [lambda [a-string] 
@@ -286,7 +290,7 @@
                                  [error [format "Timeout waiting for string ~s~n" a-string]]
                                  [begin
                                    [unless [regexp-match a-string [send ssh get-transcript]] 
-                                     [begin [sleep conn-sleep][waitforsecs a-string [- a-time conn-sleep]]]]]]]]
+                                     [begin [sleep [get-field conn-sleep ssh]][waitforsecs a-string [- a-time [get-field conn-sleep ssh]]]]]]]]]
               [waitfor [lambda [a-string][waitforsecs a-string [get-field  timeout  ssh]]]]
               [wsn [lambda [a-string a-nother-string]
                      [if [waitfor a-string]
@@ -298,7 +302,7 @@
                                                                                            [waitforsecs [first a-pair] 1]]
                                                                                      [begin [send ssh clear-transcript][sn [second a-pair]] [return #t]]
                                                                                      ]] some-opts]
-                                                                            [sleep conn-sleep]
+                                                                            [sleep [get-field conn-sleep ssh]]
                                                                             [options some-opts]]]]]
               
               [this-server ,a-server]
