@@ -121,3 +121,15 @@ Sets the default timeout (for the waitfor command)
     [send ssh read-sleep 0.001]
 
 Due to issues with blocking threads, ssh-expect polls its input ports, rather than doing blocking reads.  This delay prevents your program chewing up 100% cpu time while polling an empty port.
+
+# Requires
+
+## Racket Scheme
+
+The [Racket Scheme](https://download.racket-lang.org/) programming language.
+
+## The ssh command line program
+
+Ships with linux  and MacOSX.  
+
+Windows users can download an equivalent program called [Putty](http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html).  I recommend the msi install package.
