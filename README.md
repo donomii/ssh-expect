@@ -1,11 +1,11 @@
 # ssh-expect
-A library and convenient mini language for scripting ssh
+A library and mini language for scripting ssh
 
-ssh-expect is a scripting solution that automates boring server jobs
+ssh-expect is a scripting solution that automates tedious server jobs
 
 # Use
 
-expectssh can be used to auto   mate installs, configure servers and almost anything that can be done in an interactive terminal.
+ssh-expect automates installs, configures servers and almost anything that can be done in an interactive terminal.
 
     (require "ssh-subprocess.rkt")
     [ssh-script "myAwesomeServerbox" "mybox.coolservers.com" "bob" "sekretpassword"
@@ -16,13 +16,11 @@ expectssh can be used to auto   mate installs, configure servers and almost anyt
 
 expectssh will connect to "mybox.coolservers.com", log in, wait for the prompt, and run "ls".  It will then wait for the user prompt, and then exit.
 
-Note that this is a standard racket program, so you can run any racket command in the middle of the session.  This is very handy when you want to e.g. check that a file exists, and create it if it doesn't.
+Note that this is a standard racket program, so you can run any racket command in the middle of the session.
 
 # Manual intervention
 
-expectssh monitors STDIN, so you can type into STDIN while expectssh is running any script, and your keystrokes will be sent to the server.  This is incredibly useful during a long script, when there is an unexpected prompt on the server that stops your script e.g. "Continue(y/n)".  You can press "y" and the script will continue.
-
-You can also use expectssh to log into a server and start a mysql session, then take control and type commands directly into mysql.
+ssh-expect allows you to type commands while your script is running.  So you can use ssh-expect to log into a server and start a mysql session, then take control and type commands directly into mysql.  You can also deal with errors or enter passwords, then allow the script to continue processing.
 
 # Starting a script
 
@@ -66,13 +64,28 @@ which waits until it sees "regex", then sends "command" and then a newline.  wsn
 
 allows you to choose the timeout.
 
+# Advanced commands
+
+    [options '[["regex" "command"] [ "regex" ... ] ] ]
+
+options takes a list of pairs, where each pair is a regex, and a command to run if that regex matches.  It is effectively a "case" statement that works on the remote machine.
+
+An example that toggles the snmp demon
+
+    [send ssh clear-transcript]                    ;Make sure there is nothing in the transcript that could accidentally trigger a regex
+    [sn "service snmpd status"]                    ;Get the status of the snmpd service
+    [options '[
+        ["is running" "service snmpd stop"]         ;If the server prints "is running", we send "service snmpd stop"
+        ["is stopped" "service snmpd start"]        ;If the service is not running, start it
+        ]
+
 # Convenient variables
 
 There are a few default variables created to help your scripting:
 
     user-prompt
 
-Made from your login details, looks like "user@server".  In the example, it would be "bob@myAwesomeServerbox".  Note that because a lot of shells add colour commands to the prompt, this might not actually match your prompt.  Check the transcript output to see if you have bursts of characters like '[^ESC['.  These are colour and terminal graphics commands.
+Made from your login details, looks like "user@server".  In the example above, user-prompt would be "bob@myAwesomeServerbox".  Beware: a lot of shells add colour commands to the prompt.  Check the transcript output to see if you have bursts of characters like '^ESC[m.  These are colour and terminal graphics commands.
 
     root-prompt
 
@@ -88,7 +101,16 @@ Echoes your session to stdout
 
     [send ssh get-transcript]
 
-expectssh keeps a log of everything the server sends.  You can extract the results of commands from this
+expectssh logs everything that the server sends.  You can get a copy of this with get-transcript
 
+    [send ssh clear-transcript]
 
-FIXME: Document options command
+Clears the transcript
+
+    [send ssh timeout 120]
+
+Sets the default timeout (for the waitfor command)
+
+    [send ssh read-sleep 0.001]
+
+Due to issues with blocking threads, ssh-expect polls its input ports, rather than doing blocking reads.  This delay prevents your program chewing up 100% cpu time while polling an empty port.
