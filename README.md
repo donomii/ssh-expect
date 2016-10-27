@@ -34,7 +34,7 @@ logs into a server, runs "command", and returns the transcript of the session.
 
 # Basic commands
 
-The following functions are provided inside the script.  Some patterns are some common, like waitfor, send, send newline, that they have convenient short names.
+The following functions are provided inside the script.  Some patterns are so common, like waitfor->send->send newline, that they have convenient short names.
 
     [s "y"]
 
