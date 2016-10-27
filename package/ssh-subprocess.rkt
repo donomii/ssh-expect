@@ -162,27 +162,31 @@
              [timeout 20][procvals #f][writeport #f][readport #f][killfunc #f]) ; field
       [debug "Created ssh object"]
       (super-new)                ; superclass initialization
+
+      ;Provide some methods for setting useful fields
       [define/public set-echo-to-stdout [lambda [a-boolean] [set! echo-to-stdout a-boolean]]]
       [define/public set-timeout [lambda [a-number] [set! timeout a-number]]]
       [define/public read-sleep [lambda [a-number] [set! conn-sleep a-number]]]
       
-      (define/public (new_session a-server-address a-user a-password  )
+      (define/public (new_session a-server-address a-user a-password)
         ""
-        ;[let [[cmd [format "package\\sshbin\\bin\\ssh.exe -o PreferredAuthentications=keyboard-interactive  ~a@~a" a-user a-server-address]]]
-        ;[let [[cmd [format "\"c:\\Program Files (x86)\\PuTTY\\plink.exe\"   ~a@~a" a-user a-server-address]]]
+        ;[let [[cmd [format "package\\sshbin\\bin\\ssh.exe -o PreferredAuthentications=keyboard-interactive  ~a@~a" a-user a-server-address]]]  ; Still useful?
         [let [[cmd
                [if [or [equal? [system-type 'os] 'unix] [equal? [system-type 'os] 'macosx]]
                    [format "/usr/bin/ssh -t -t   ~a@~a" a-user a-server-address]
                    [format "\"c:\\Program Files (x86)\\PuTTY\\plink.exe\"   ~a@~a" a-user a-server-address]]]]
           [display cmd][newline]
           [set! procvals [process cmd]]]
+        
         [write  [[fifth procvals] 'status] ][newline]
         [debug "Connecting to remote server"]
         [set! writeport [second procvals]]
         [set! readport [first procvals]]
+        [set! errport [fourth procvals]]
         [set! killfunc [fifth procvals]]
         (file-stream-buffer-mode readport 'none)
         (file-stream-buffer-mode writeport 'none)
+        (file-stream-buffer-mode errport 'none)
         ;[displayln password writeport]
         [debug "Wrapper setup complete"]
         [set! receiver-thread
@@ -195,17 +199,21 @@
                                       [set! transcript [string-append transcript a-string]]]]]
         [set! receiver-thread
               [make-receiver-thread
-               [fourth procvals]
+               errport
                [lambda [a-string] 
-                 ;[when echo-to-stdout [begin [when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]][display [remove-escapes a-string]]]]
+                 [when echo-to-stdout [begin ;[when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]]
+                                             [display [remove-escapes a-string]]]]
                  [set! transcript [string-append transcript a-string]]]]]
+        
         [set! transmitter-thread [make-transmitter-thread writeport]]
-        )
+        ) ;End of new_session
       
       [define/public get-transcript [lambda [ ] transcript]]
+      
       [define/public close [lambda []
                              (killfunc 'kill)]]
       [define/public [clear-transcript] [set! transcript ""]#t]
+      
       [define/public send-string
         [lambda [a-string]
           [[thunk
@@ -213,9 +221,8 @@
               [error "You must call new_session first!"]]
             [debug [format "Sending ~s" a-string]]
             [display a-string writeport]]]
-          ;[ssh_channel_write chan [format "~n"] [string-length [format "~n"]] ]
-          #t]
-        ]
+          #t]]
+      
       [define/public send-bytes
         [lambda [a-bytes]
           
@@ -224,12 +231,8 @@
               [error "You must call new_session first!"]]
             [debug [format "Sending ~s" a-bytes]]
             [display a-bytes writeport]]]
-          ;[ssh_channel_write chan [format "~n"] [string-length [format "~n"]] ]
           #t 
-          ]
-        ]
-      
-      
+          ]]
       )]
 
   
@@ -252,31 +255,7 @@
                    [sleep 15]
                    [send ssh get-transcript]]]]]
   
-  ;ssh-script - Opens a ssh connection using the details provided, and binds a number of handy functions for scripting
-  ;
-  ; [s "a string"]  - sends a string through the connection
-  ; [sn "a string"] - sends a string, followed by a newline
-  ; [waitforsecs "a regex" a-number] - waits for "a regex", and throws an error after a-number of seconds
-  ; [waitfor "a regex"] - waits for "a regex", times out after 10 mins
-  ; [wsn "a regex" "a string" ] - clears the buffer, waits for "a regex", then sends "a string" followed by a newline
-  ;
-  ; variables
-  ;
-  ; root-prompt - the default unix prompt, "root@a-server"
-  ; user-prompt - the default prompt, "a-user@a-server"
-  ;
-  ; returns the result of your expression
-  ;
-  ; Example
-  ;
-  ; [define do-eet [lambda [a-server an-ip a-user a-password ]
-  ;                 [ssh-script a-server an-ip a-user a-password 
-  ;                          [lambda [] 
-  ;                            [send ssh set-echo-to-stdout #t]
-  ;                            [wsn user-prompt "ls"]
-  ;                            [wsn user-prompt "echo Done"]]]]]
-  [defmacro ssh-script [a-server an-ip a-user a-password thunk]
-    
+  [defmacro ssh-script [a-server an-ip a-user a-password thunk]  
     `[letrec [
               
               [ssh [[make-login ,an-ip ,a-user ,a-password]]]
@@ -291,11 +270,14 @@
                                  [begin
                                    [unless [regexp-match a-string [send ssh get-transcript]] 
                                      [begin [sleep [get-field conn-sleep ssh]][waitforsecs a-string [- a-time [get-field conn-sleep ssh]]]]]]]]]
+              
               [waitfor [lambda [a-string][waitforsecs a-string [get-field  timeout  ssh]]]]
+              
               [wsn [lambda [a-string a-nother-string]
                      [if [waitfor a-string]
                          [begin [send ssh clear-transcript][sn a-nother-string]]
                          [error "Waitfor string timed out"]]]]
+              
               [options [lambda [some-opts] [call-with-escape-continuation [lambda [return] 
                                                                             [map [lambda [a-pair]
                                                                                    [when [with-handlers [[[const #t][const #f]]]
@@ -310,9 +292,7 @@
               [user-prompt [format "~a@~a" ,a-user ,a-server]]
               ]
        [let [[result [,thunk] ]]
-         
          [send ssh close]
          result]
-       
        ]]
   ]
