@@ -65,7 +65,7 @@ they are combined into wsn:
 
     [wsn "regex" "command"]
 
-which waits until it sees "regex", then clears the transcript, sends "command" and then a newline.  wsn will timeout after a default time.  (Set the timeout with [send ssh timeout 120]).
+which waits until it sees "regex", then clears the transcript, sends "command" and then a newline.  wsn will timeout after a default time.  (Set the timeout with [send ssh set-timeout 120]).
 
     [waitforsecs "regex" 60]
 
@@ -114,7 +114,7 @@ expectssh logs everything that the server sends.  You can get a copy of this wit
 
 Clears the transcript
 
-    [send ssh timeout 120]
+    [send ssh set-timeout 120]
 
 Sets the default timeout (for the waitfor command)
 
@@ -133,3 +133,7 @@ The [Racket Scheme](https://download.racket-lang.org/) programming language.
 Ships with linux  and MacOSX.  
 
 Windows users can download an equivalent program called [Putty](http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html).  I recommend the msi install package.
+
+# Bugs
+
+ssh-ffi.rkt, the FFI interface to the SSH library, is currently broken and probably won't be repaired - it was incomplete, crashed often, and needed users to download a hard-to-find library.  It had a difficult API that required work-arounds to avoid blocking the entire racket interpreter.  The ssh subprocess wrapper is much more reliable, comes pre-installed on most systems, and has a simple API.
