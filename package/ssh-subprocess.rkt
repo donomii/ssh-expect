@@ -82,7 +82,7 @@
   
   ;(define g (generator (a-chan a-string)
   ;                     [displayln "Start of generator"]                
-  ;                     ;[send ssh send-string "ssh root@vn2jp"]
+  ;                     ;[send ssh send-string "ssh root@server"]
   ;                     [transmit-string a-chan "password" ]
   ;                     
   ;                     
@@ -91,8 +91,8 @@
   ;                     [transmit-string a-chan "password" ]
   ;                     
   ;                     
-  ;                     ;[send ssh send-string "pmq"]
-  ;                     [transmit-string a-chan "pmq" ]
+  ;                     ;[send ssh send-string "ls"]
+  ;                     [transmit-string a-chan "ls" ]
   ;                     
   ;                     
   ;                     [exit]
@@ -158,10 +158,12 @@
     (class object%
       (init )                ; initialization argument
       
-      (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [transmitter-thread #f] [transcript ""] [echo-to-stdout #t] [timeout 20][procvals #f][writeport #f][readport #f][killfunc #f]) ; field
+      (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [transmitter-thread #f] [transcript ""] [echo-to-stdout #t][conn-sleep 0.001][timeout 20][procvals #f][writeport #f][readport #f][killfunc #f]) ; field
       [debug "Created ssh object"]
       (super-new)                ; superclass initialization
       [define/public set-echo-to-stdout [lambda [a-boolean] [set! echo-to-stdout a-boolean]]]
+      [define/public timeout [lambda [a-number] [set! timeout a-number]]]
+      [define/public read-sleep [lambda [a-number] [set! conn-sleep a-number]]]
       
       (define/public (new_session a-server-address a-user a-password  )
         ""
@@ -198,14 +200,10 @@
       
       [define/public get-transcript [lambda [ ] transcript]]
       [define/public close [lambda []
-                             (killfunc 'kill);
-                             
-                             
-                             ]]
+                             (killfunc 'kill)]]
       [define/public [clear-transcript] [set! transcript ""]#t]
       [define/public send-string
         [lambda [a-string]
-          
           [[thunk
             [when [not writeport]
               [error "You must call new_session first!"]]
@@ -229,7 +227,7 @@
       
       
       )]
-  
+
   
   
   [displayln "Creating default ssh object"]  
@@ -288,7 +286,7 @@
                                  [error [format "Timeout waiting for string ~s~n" a-string]]
                                  [begin
                                    [unless [regexp-match a-string [send ssh get-transcript]] 
-                                     [begin [sleep 0.1][waitforsecs a-string [- a-time 0.1]]]]]]]]
+                                     [begin [sleep conn-sleep][waitforsecs a-string [- a-time conn-sleep]]]]]]]]
               [waitfor [lambda [a-string][waitforsecs a-string [get-field  timeout  ssh]]]]
               [wsn [lambda [a-string a-nother-string]
                      [if [waitfor a-string]
@@ -300,7 +298,7 @@
                                                                                            [waitforsecs [first a-pair] 1]]
                                                                                      [begin [send ssh clear-transcript][sn [second a-pair]] [return #t]]
                                                                                      ]] some-opts]
-                                                                            [sleep 0.1]
+                                                                            [sleep conn-sleep]
                                                                             [options some-opts]]]]]
               
               [this-server ,a-server]
