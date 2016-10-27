@@ -122,6 +122,29 @@ Sets the default timeout (for the waitfor command)
 
 Due to issues with blocking threads, ssh-expect polls its input ports, rather than doing blocking reads.  This delay prevents your program chewing up 100% cpu time while polling an empty port.
 
+# API
+
+You are not required to use the scripting setup described above.  You can directly access the ssh object.
+
+    [let [[ssh [new ssh-wrapper%]]]
+                 [send ssh new_session a-server a-user a-password]
+
+Create a new ssh connection to the server.
+
+    [send ssh send-string "ls"]
+
+Send a string to the server.
+
+    [send ssh send-bytes #"ls"]
+
+Send a bytestring
+
+    [send ssh get-transcript]
+
+Get the sessions transcript
+
+    [send ssh clear-transcript]
+
 # Requires
 
 ## Racket Scheme
@@ -130,7 +153,7 @@ The [Racket Scheme](https://download.racket-lang.org/) programming language.
 
 ## The ssh command line program
 
-Ships with linux  and MacOSX.  
+Ships with linux, and MacOSX.
 
 Windows users can download an equivalent program called [Putty](http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html).  I recommend the msi install package.
 
