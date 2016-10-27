@@ -46,11 +46,18 @@ Sends the string to the server, then a newline.  Common when scripting commands 
 
     [waitfor "regex"]
 
-Waits until the server outputs a string that matches "regex".  "regex" is passed straight to regexp-match, so you can use any normal Racket regex.  waitfor is often used for waiting for the command prompt to appear.
+Waits until the server outputs a string that matches "regex".  "regex" is passed straight to regexp-match, so you can use any normal Racket regex.  waitfor is useful when waiting for the command prompt to appear.  Note that waitfor doesn't clear the transcript, so you should clear it yourself.  Otherwise your [waitfor "regex"] might match a previous command in the transcript.  e.g.
+
+    [waitfor user-prompt]
+    [send ssh clear-transcript]
+    [sn "ls"]
+    [waitfor user-prompt]
+    
 
 Because so many scripts use this pattern:
 
     [waitfor prompt-regex]
+    [send ssh clear-transcript]
     [send "command"]
     [send newline]
 
@@ -58,7 +65,7 @@ they are combined into wsn:
 
     [wsn "regex" "command"]
 
-which waits until it sees "regex", then sends "command" and then a newline.  wsn will timeout after a default time.
+which waits until it sees "regex", then clears the transcript, sends "command" and then a newline.  wsn will timeout after a default time.  (Set the timeout with [send ssh timeout 120]).
 
     [waitforsecs "regex" 60]
 
