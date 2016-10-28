@@ -22,6 +22,22 @@ Note that this is a standard racket program, so you can run any racket command i
 
 ssh-expect allows you to type commands while your script is running.  So you can use ssh-expect to log into a server and start a mysql session, then take control and type commands directly into mysql.  You can also deal with errors or enter passwords, then allow the script to continue processing.
 
+# Scripting with ssh-expect
+
+The sschscript command can be used to run a ssh script from a file.  Run with 
+
+    racket sshscript.rkt scriptfile.txt
+
+Several example files are included, they all follow the same format:
+
+    [ssh-script "" "192.168.1.104" "pi" "raspberry" [lambda []
+          [send ssh set-echo-to-stdout #t]
+          [wsn user-prompt "restart"]
+          [waitfor user-prompt]
+          [exit 0]]]
+
+# Writing you own programs using ssh-expect
+
 # Starting a script
 
     [ssh-script "server name" "server ip address or full dns name" "login name" "login password" thunk]
