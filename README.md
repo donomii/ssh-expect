@@ -89,7 +89,7 @@ allows you to choose the timeout.
 
 # Advanced commands
 
-    [options '[["regex" "command"] [ "regex" ... ] ] ]
+    [ssh-case '[["regex" "command"] [ "regex" ... ] ] ]
 
 options takes a list of pairs, where each pair is a regex, and a command to run if that regex matches.  It is effectively a "case" statement that works on the remote machine.
 
