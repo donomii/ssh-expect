@@ -1,0 +1,10 @@
+[ssh-script "" "192.168.1.104" "pi" "raspberry" [lambda []
+          [send ssh set-echo-to-stdout #t]
+          [wsn user-prompt "" "ps auxwww"]
+          [clear-transcript]
+          [option '[
+            [ "deluge" ""]
+            [ ".*" "deluge &"]]]
+          [waitfor user-prompt]
+          [displayln "Torrents started!"]
+          [exit 0]]]

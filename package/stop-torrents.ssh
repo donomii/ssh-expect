@@ -1,0 +1,7 @@
+[ssh-script "" "192.168.1.104" "pi" "raspberry" [lambda []
+          [send ssh set-echo-to-stdout #t]
+          [wsn user-prompt "pkill -f deluge"]
+          [clear-transcript]
+          [waitfor user-prompt]
+          [displayln "Torrents stopped!"]
+          [exit 0]]]
