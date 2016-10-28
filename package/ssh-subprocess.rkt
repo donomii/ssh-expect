@@ -159,7 +159,7 @@
       (init )                ; initialization argument
       
       (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [transmitter-thread #f] [transcript ""] [echo-to-stdout #t][conn-sleep 0.001]
-             [timeout 20][procvals #f][writeport #f][readport #f][killfunc #f]) ; field
+             [timeout 20][procvals #f][writeport #f][readport #f][killfunc #f][errport #f]) ; field
       [debug "Created ssh object"]
       (super-new)                ; superclass initialization
 
@@ -274,19 +274,35 @@
               [waitfor [lambda [a-string][waitforsecs a-string [get-field  timeout  ssh]]]]
               
               [wsn [lambda [a-string a-nother-string]
+                     
+                     [displayln "WSN"]
                      [if [waitfor a-string]
                          [begin [send ssh clear-transcript][sn a-nother-string]]
                          [error "Waitfor string timed out"]]]]
+
+              [ssh-case [lambda [some-opts]
+                [call-with-escape-continuation [lambda [return]         
+                    [map [lambda [a-pair]
+                           [when [with-handlers [[[const #t][const #f]]]
+                                   [waitforsecs [first a-pair] 1]]
+                             [begin [send ssh clear-transcript][sn [second a-pair]] [return #t]]
+                             ]] some-opts]
+                    ;[sleep [get-field conn-sleep ssh]]
+                    ;[ssh-case some-opts]
+                                                 ]]]]
+               
+              [options-thunks [lambda [some-opts]
+                                [displayln "WTF"]
+                [call-with-escape-continuation [lambda [return]
+                    [map [lambda [a-pair]
+                           [when [with-handlers [[[const #t][const #f]]]
+                                   [waitforsecs [first a-pair] 1]]
+                             [begin [send ssh clear-transcript][[second a-pair]] [return #t]]
+                             ]] some-opts]
+                    [sleep [get-field conn-sleep ssh]]
+                    [options-thunks some-opts]]]]]
               
-              [options [lambda [some-opts] [call-with-escape-continuation [lambda [return] 
-                                                                            [map [lambda [a-pair]
-                                                                                   [when [with-handlers [[[const #t][const #f]]]
-                                                                                           [waitforsecs [first a-pair] 1]]
-                                                                                     [begin [send ssh clear-transcript][sn [second a-pair]] [return #t]]
-                                                                                     ]] some-opts]
-                                                                            [sleep [get-field conn-sleep ssh]]
-                                                                            [options some-opts]]]]]
-              
+
               [this-server ,a-server]
               [root-prompt [format "root@~a" ,a-server]]
               [user-prompt [format "~a@~a" ,a-user ,a-server]]
