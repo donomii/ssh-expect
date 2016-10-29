@@ -91,15 +91,29 @@ allows you to choose the timeout.
 
     [ssh-case '[["regex" "command"] [ "regex" ... ] ] ]
 
-options takes a list of pairs, where each pair is a regex, and a command to run if that regex matches.  It is effectively a "case" statement that works on the remote machine.
+ssh-case takes a list of pairs, where each pair is a regex, and a command to run if that regex matches.  It is effectively a "case" statement that works on the remote machine.
 
 An example that toggles the snmp demon
 
     [send ssh clear-transcript]                    ;Make sure there is nothing in the transcript that could accidentally trigger a regex
     [sn "service snmpd status"]                    ;Get the status of the snmpd service
-    [options '[
+    [ssh-case '[
         ["is running" "service snmpd stop"]         ;If the server prints "is running", we send "service snmpd stop"
         ["is stopped" "service snmpd start"]        ;If the service is not running, start it
+        ]
+
+
+    [options-thunks '[[ "regex" [lambda[]] ] [ "regex" [lambda[]] ] ... ] ]
+
+option-thunks takes a list of pairs, where each pair is a regex, and a command to run if that regex matches.  The thunk is run in the context of the script, so it has full access to the ssh object and the racket interpreter, so you can print message, pop up a window, or add data to a database.
+
+An example that displays the status of the snmp demon
+
+    [send ssh clear-transcript]                    ;Make sure there is nothing in the transcript that could accidentally trigger a regex
+    [sn "service snmpd status"]                    ;Get the status of the snmpd service
+    [options-thunks '[
+        ["is running" [thunk [displayln "SNMP is running"]]]
+        ["is stopped" [thunk [displayln "SNMP has stopped"]]]
         ]
 
 # Convenient variables
