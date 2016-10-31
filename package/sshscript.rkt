@@ -5,7 +5,7 @@
 
 ; Options I want
 ;
-l --trace Print each command as it is run
+; --trace Print each command as it is run
 ; --debug,d Print all debugging messages
 ; --verbose,v Print all communications to stdout
 ; --user,u Supply username to be used to replace USERNAME in script
