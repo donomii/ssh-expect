@@ -1,11 +1,13 @@
 # ssh-expect
 A library and mini language for scripting ssh
 
-ssh-expect is a scripting solution that automates tedious server jobs
+ssh-expect is a scripting solution that automates tedious server jobs.  It is loosely modelled on the TCL expect library.
 
 # Use
 
 ssh-expect automates installs, configures servers and almost anything that can be done in an interactive terminal.
+
+It was originally written to automate a very tedious procedure that required me to log into several relay ssh servers in order to access the actual server I needed to work on.
 
     (require "ssh-subprocess.rkt")
     [ssh-script "myAwesomeServerbox" "mybox.coolservers.com" "bob" "sekretpassword"
@@ -40,7 +42,7 @@ Several example files are included, they all follow the same format:
 
 # Starting a script
 
-    [ssh-script "server name" "server ip address or full dns name" "login name" "login password" thunk]
+    [ssh-script "server name" "server address" "login name" "login password" thunk]
 
 as in the example, connect to a server and run the script defined in thunk.
 
@@ -148,7 +150,7 @@ Clears the transcript
 
 Sets the default timeout (for the waitfor command)
 
-    [send ssh read-sleep 0.001]
+    [send ssh read-sleep 0.1]
 
 Due to issues with blocking threads, ssh-expect polls its input ports, rather than doing blocking reads.  This delay prevents your program chewing up 100% cpu time while polling an empty port.
 
@@ -174,6 +176,15 @@ Send a bytestring
 Get the sessions transcript
 
     [send ssh clear-transcript]
+
+# Troubleshooting
+
+By far the biggest problems are caused by timing.  Either clearing the transcript at the wrong time (and accidentally deleting the prompt you want to wait for), or by accidentally triggering a command too early (the string you want to wait for occurs many times in the transcript, and you didn't realise that).  To get full debugging, call
+
+    [connection-debug #t]
+    [send ssh set-echo-to-stdout #t]
+
+This will show you everything sent and received, which should be enough to find your problem.
 
 # Requires
 
