@@ -3,7 +3,7 @@
 ;  Released under the GPL 
 
 [module ssh  racket/gui
-  [provide  ssh-wrapper% make-login remove-escapes process-escapes ssh-command ssh-script]
+  [provide  ssh-wrapper% make-login remove-escapes process-escapes ssh-command ssh-script connection-debug]
   (require ffi/unsafe
            ffi/unsafe/define)
   (require racket/class)
@@ -43,8 +43,14 @@
   ;CTRL-O: F (SI)
   
   ;also:  http://www.cs.tut.fi/~jkorpela/chars/c0.html
-  ;[define debug [λ args #t]]
-  [define debug [λ args [displayln ""][displayln args]]]
+  [define doDebug #f]
+  [define debug [λ args [if doDebug
+                            [begin [displayln ""][displayln args]]
+    [λ args #t]]]]
+
+  [define connection-debug [lambda [state]
+                             [set! doDebug state]]]
+  
   
   
   (define interfaces (make-hash))
@@ -101,17 +107,22 @@
   
   
   [define [transmit-string a-chan line]
-    [displayln [format "Sending ~s~n" line]]
+    [debug [format "Sending ~s~n" line]]
     [display line a-chan]]
   
   
   [define [receive-string  a-chan]
     [if [byte-ready? a-chan]
         [letrec [[buff [make-bytes 80 32]]
-                 [readbytes [read-bytes-avail! buff a-chan]]]
-          [format "~a" [subbytes buff 0 readbytes]]]
-        
-        #""]]
+                 [readbytes [read-bytes-avail!* buff a-chan]]]
+          [if [equal? readbytes eof]
+              [begin [displayln "Link closed, exiting"]
+                     [exit 0]]
+                 [if [> readbytes 0]
+                     [format "~a" [subbytes buff 0 readbytes]]
+                     ""
+                     ]]]
+        ""]]
   
   [define make-transmitter-thread
     [lambda [a-chan] 
@@ -132,11 +143,11 @@
       [thread  [lambda args
                  [debug "Starting receiver"]
                  [letrec [[readloop [lambda []
-                                      [let [[stuff [format "~a" [receive-string a-chan]]]]
+                                      [let [[stuff  [receive-string a-chan]]]
                                         ;[display stuff stream-out]
                                         ;[set! transcript [string-append transcript stuff]]
                                         [a-callback stuff]
-                                        [display stuff transcript-port]
+                                        ;[display stuff transcript-port]
                                         ]
                                       ;[sleep 0.001]  FIXME?
                                       [readloop]]]]
@@ -158,7 +169,7 @@
     (class object%
       (init )                ; initialization argument
       
-      (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [transmitter-thread #f] [transcript ""] [echo-to-stdout #t][conn-sleep 0.001]
+      (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [transmitter-thread #f] [transcript ""] [echo-to-stdout #t][conn-sleep 0.1]
              [timeout 20][procvals #f][writeport #f][readport #f][killfunc #f][errport #f]) ; field
       [debug "Created ssh object"]
       (super-new)                ; superclass initialization
@@ -175,7 +186,7 @@
                [if [or [equal? [system-type 'os] 'unix] [equal? [system-type 'os] 'macosx]]
                    [format "/usr/bin/ssh -t -t   ~a@~a" a-user a-server-address]
                    [format "\"c:\\Program Files (x86)\\PuTTY\\plink.exe\"   ~a@~a" a-user a-server-address]]]]
-          [display cmd][newline]
+          ;[display cmd][newline]
           [set! procvals [process cmd]]]
         
         [write  [[fifth procvals] 'status] ][newline]
@@ -191,19 +202,24 @@
         [debug "Wrapper setup complete"]
         [set! receiver-thread
               [make-receiver-thread readport
-                                    [lambda [a-string] 
+                                    [lambda [a-string]
+                                      [set! transcript [string-append transcript a-string]]
+                                      
                                       [when echo-to-stdout
                                         [begin
                                           ;[when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]]
                                           [display [remove-escapes a-string]]]]
-                                      [set! transcript [string-append transcript a-string]]]]]
+                                      a-string
+                                      ]]]
+        
         [set! receiver-thread
               [make-receiver-thread
                errport
-               [lambda [a-string] 
-                 [when echo-to-stdout [begin ;[when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]]
-                                             [display [remove-escapes a-string]]]]
-                 [set! transcript [string-append transcript a-string]]]]]
+               [lambda [a-string]
+                 [set! transcript [string-append transcript a-string]]
+;                 [when echo-to-stdout [begin ;[when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]]
+;                                             [display [remove-escapes a-string]]]]
+                 ]]]
         
         [set! transmitter-thread [make-transmitter-thread writeport]]
         ) ;End of new_session
@@ -212,7 +228,7 @@
       
       [define/public close [lambda []
                              (killfunc 'kill)]]
-      [define/public [clear-transcript] [set! transcript ""]#t]
+      [define/public clear-transcript [lambda [] [set! transcript ""] #t]]
       
       [define/public send-string
         [lambda [a-string]
@@ -237,7 +253,7 @@
 
   
   
-  [displayln "Creating default ssh object"]  
+  ;[displayln "Creating default ssh object"]  
   [define real-ssh [new ssh-wrapper%]]
   
   
@@ -265,8 +281,9 @@
               [sn [lambda [a-string] [s a-string][s [format "~n"]]]]
               
               [waitforsecs [lambda [a-string a-time]
+                             ;[displayln [format "Waiting for '~a'" a-string]]
                              [if [< a-time 0]
-                                 [error [format "Timeout waiting for string ~s~n" a-string]]
+                                 [error [format "Timeout waiting for string ~s~n~a" a-string [send ssh get-transcript]]]
                                  [begin
                                    [unless [regexp-match a-string [send ssh get-transcript]] 
                                      [begin [sleep [get-field conn-sleep ssh]][waitforsecs a-string [- a-time [get-field conn-sleep ssh]]]]]]]]]
@@ -275,7 +292,6 @@
               
               [wsn [lambda [a-string a-nother-string]
                      
-                     [displayln "WSN"]
                      [if [waitfor a-string]
                          [begin [send ssh clear-transcript][sn a-nother-string]]
                          [error "Waitfor string timed out"]]]]
