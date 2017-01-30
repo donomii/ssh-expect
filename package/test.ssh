@@ -1,0 +1,6 @@
+[ssh-script "" "database-server.com" "myusername" "mypassword" [lambda []
+          [send ssh set-echo-to-stdout #t]
+          [wsn user-prompt "isql -v db_name db_username -n"]
+          [wsn "SQL>" "SELECT * FROM table;"]
+          [waitfor "SQL>"]
+          [exit 0]]]
