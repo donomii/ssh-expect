@@ -103,7 +103,8 @@ An example that toggles the snmp demon
         ["is running" "service snmpd stop"]         ;If the server prints "is running", we send "service snmpd stop"
         ["is stopped" "service snmpd start"]        ;If the service is not running, start it
         ]
-.
+
+Or use options-thunks to handle cases where you need something more complex than just sending a string.
  
     [options-thunks '[[ "regex" [lambda[]] ] [ "regex" [lambda[]] ] ... ] ]
 
