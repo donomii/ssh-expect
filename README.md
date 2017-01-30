@@ -26,7 +26,7 @@ ssh-expect allows you to type commands while your script is running.  So you can
 
 # Scripting with ssh-expect
 
-The sschscript command can be used to run a ssh script from a file.  Run with 
+The sshscript command can be used to run a ssh script from a file.  Run with 
 
     racket sshscript.rkt scriptfile.txt
 
@@ -103,7 +103,7 @@ An example that toggles the snmp demon
         ["is running" "service snmpd stop"]         ;If the server prints "is running", we send "service snmpd stop"
         ["is stopped" "service snmpd start"]        ;If the service is not running, start it
         ]
-
+ 
 
     [options-thunks '[[ "regex" [lambda[]] ] [ "regex" [lambda[]] ] ... ] ]
 
