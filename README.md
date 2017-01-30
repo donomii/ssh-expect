@@ -93,8 +93,6 @@ allows you to choose the timeout.
 
     [ssh-case '[["regex" "command"] [ "regex" ... ] ] ]
 
-ssh-case takes a list of pairs, where each pair is a regex, and a command to run if that regex matches.  It is effectively a "case" statement that works on the remote machine.
-
 An example that toggles the snmp demon
 
     [send ssh clear-transcript]                    ;Make sure there is nothing in the transcript that could accidentally trigger a regex
@@ -103,7 +101,9 @@ An example that toggles the snmp demon
         ["is running" "service snmpd stop"]         ;If the server prints "is running", we send "service snmpd stop"
         ["is stopped" "service snmpd start"]        ;If the service is not running, start it
         ]
- 
+
+ssh-case takes a list of pairs, where each pair is a regex, and a command to run if that regex matches.  It is effectively a "case" statement that works on the remote machine.
+
 
     [options-thunks '[[ "regex" [lambda[]] ] [ "regex" [lambda[]] ] ... ] ]
 
