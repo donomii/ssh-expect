@@ -9,12 +9,14 @@ ssh-expect automates installs, configures servers and almost anything that can b
 
 It was originally written to automate a very tedious procedure that required me to log into several relay ssh servers in order to access the actual server I needed to work on.
 
+```racket
     (require "ssh-subprocess.rkt")
     [ssh-script "myAwesomeServerbox" "mybox.coolservers.com" "bob" "sekretpassword"
                             [lambda [] 
                               [send ssh set-echo-to-stdout #t]
                               [wsn user-prompt "ls"]
                               [wsn user-prompt "echo Done"]]]
+```
 
 expectssh will connect to "mybox.coolservers.com", log in, wait for the prompt, and run "ls".  It will then wait for the user prompt, and then exit.
 
@@ -28,25 +30,33 @@ ssh-expect allows you to type commands while your script is running.  So you can
 
 The sshscript command can be used to run a ssh script from a file.  Run with 
 
+```bash
     racket sshscript.rkt scriptfile.txt
+```
 
 Several example files are included, they all follow the same format:
 
+```racket
     [ssh-script "" "192.168.1.104" "pi" "raspberry" [lambda []
           [send ssh set-echo-to-stdout #t]
           [wsn user-prompt "restart"]
           [waitfor user-prompt]
           [exit 0]]]
+```
 
 # Writing you own programs using ssh-expect
 
 # Starting a script
 
+```racket
     [ssh-script "server name" "server address" "login name" "login password" thunk]
+```
 
 as in the example, connect to a server and run the script defined in thunk.
 
+```racket
     [ssh-command "server address" "login name" "login password" "command"]
+```
 
 logs into a server, runs "command", and returns the transcript of the session.
 
@@ -66,58 +76,73 @@ Sends the string to the server, then a newline.  Common when scripting commands 
 
 Waits until the server outputs a string that matches "regex".  "regex" is passed straight to regexp-match, so you can use any normal Racket regex.  waitfor is useful when waiting for the command prompt to appear.  Note that waitfor doesn't clear the transcript, so you should clear it yourself.  Otherwise your [waitfor "regex"] might match a previous command in the transcript.  e.g.
 
+```racket
     [waitfor user-prompt]
     [send ssh clear-transcript]
     [sn "ls"]
     [waitfor user-prompt]
-    
+```
 
 Because so many scripts use this pattern:
 
+```racket
     [waitfor prompt-regex]
     [send ssh clear-transcript]
     [send "command"]
     [send newline]
+```
 
 they are combined into wsn:
 
+```racket
     [wsn "regex" "command"]
+```
 
 which waits until it sees "regex", then clears the transcript, sends "command" and then a newline.  wsn will timeout after a default time.  (Set the timeout with [send ssh set-timeout 120]).
 
+```racket
     [waitforsecs "regex" 60]
+```
 
 allows you to choose the timeout.
 
 # Advanced commands
 
+```racket
     [ssh-case '[["regex" "command"] [ "regex" ... ] ] ]
+```
 
 ssh-case takes a list of pairs, where each pair is a regex, and a command to run if that regex matches.  It is effectively a "case" statement that works on the remote machine.
 
-An example that toggles the snmp demon
+An example that toggles the snmp demon on a remote server
 
+```racket
     [send ssh clear-transcript]                    ;Make sure there is nothing in the transcript that could accidentally trigger a regex
     [sn "service snmpd status"]                    ;Get the status of the snmpd service
     [ssh-case '[
         ["is running" "service snmpd stop"]         ;If the server prints "is running", we send "service snmpd stop"
         ["is stopped" "service snmpd start"]        ;If the service is not running, start it
         ]
+```
 
 Or use options-thunks to handle cases where you need something more complex than just sending a string.
  
+ ```racket
     [options-thunks '[[ "regex" [lambda[]] ] [ "regex" [lambda[]] ] ... ] ]
+```
 
 option-thunks takes a list of pairs, where each pair is a regex, and a command to run if that regex matches.  The thunk is run in the context of the script, so it has full access to the ssh object and the racket interpreter, so you can print message, pop up a window, or add data to a database.
 
 An example that displays the status of the snmp demon
 
+```racket
     [send ssh clear-transcript]                    ;Make sure there is nothing in the transcript that could accidentally trigger a regex
     [sn "service snmpd status"]                    ;Get the status of the snmpd service
     [options-thunks '[
         ["is running" [thunk [displayln "SNMP is running"]]]
         ["is stopped" [thunk [displayln "SNMP has stopped"]]]
         ]
+```
 
 # Convenient variables
 
