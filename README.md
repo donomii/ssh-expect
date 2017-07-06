@@ -265,6 +265,24 @@ Windows users can download an equivalent program called [Putty](http://www.chiar
           [exit 0]]]
 ```
 
+## Log into a server, start mysql, and check that a certain row has the correct value
+
+```racket
+#lang racket
+
+(require "ssh-subprocess.rkt")
+
+[define test-database [lambda [ a-server an-ip a-user a-password ]
+                   [ssh-script a-server an-ip a-user a-password
+                            [lambda []
+                              [send ssh set-echo-to-stdout #t]
+                              [wsn user-prompt "mysql <database name>"]
+                              [wsn "mysql>" "SELECT data FROM DataTable WHERE key='12345';"]
+                              [wsn "data that we are looking for" "echo Done"]]]]]
+
+[test "" "database.server.com" "username" "nopass"]
+```
+
 # Bugs
 
 ssh-ffi.rkt, the FFI interface to the SSH library, is currently broken and probably won't be repaired - it was incomplete, crashed often, and needed users to download a hard-to-find library.  It had a difficult API that required work-arounds to avoid blocking the entire racket interpreter.  The ssh subprocess wrapper is much more reliable, comes pre-installed on most systems, and has a simple API.
