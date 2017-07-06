@@ -278,9 +278,15 @@ Windows users can download an equivalent program called [Putty](http://www.chiar
                               [send ssh set-echo-to-stdout #t]
                               [wsn user-prompt "mysql <database name>"]
                               [wsn "mysql>" "SELECT data FROM DataTable WHERE key='12345';"]
-                              [wsn "data that we are looking for" "echo Done"]]]]]
-
-[test "" "database.server.com" "username" "nopass"]
+                              [waitfor "SQL>"]
+                              [ssh-case '[
+                                [ "data that we are looking for" "echo Found it!"]
+                                [".*" "echo default"]]
+                              ]
+                              [displayln "Fell through options"]
+                              [wsn "SQL>" "exit"]
+                              [exit 1]
+                              [wsn  "echo Done"]]]]]
 ```
 
 ## Log into a server, and sftp a file to another server
