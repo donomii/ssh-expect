@@ -199,6 +199,26 @@ Ships with linux, and MacOSX.
 
 Windows users can download an equivalent program called [Putty](http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html).  I recommend the msi install package.
 
+# More examples
+
+## Log into a server and check that it can sftp to another server
+
+```racket
+#lang racket
+[require "ssh-subprocess.rkt"]
+[ssh-script "" "gateway.server.com" "username" "nopass"
+        [lambda []
+          [send ssh set-echo-to-stdout #f]
+          [displayln [send ssh get-transcript]]
+          [wsn user-prompt "sftp -v -o PreferredAuthentications=password -o PubkeyAuthentication=no remote_username@target.server.com"]
+          [wsn "s password:" "remote password"]
+          [wsn "sftp>" "ls"]
+          [waitfor "sftp>"]
+          [displayln [send ssh get-transcript]]
+          [exit 0]]]
+
+```
+
 # Bugs
 
 ssh-ffi.rkt, the FFI interface to the SSH library, is currently broken and probably won't be repaired - it was incomplete, crashed often, and needed users to download a hard-to-find library.  It had a difficult API that required work-arounds to avoid blocking the entire racket interpreter.  The ssh subprocess wrapper is much more reliable, comes pre-installed on most systems, and has a simple API.
