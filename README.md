@@ -109,7 +109,12 @@ allows you to choose the timeout.
 # Advanced commands
 
 ```racket
-    [ssh-case '[["regex" "command"] [ "regex" ... ] ] ]
+    [ssh-case '[
+        [ "regex" "command" ] 
+        [ "regex" "command" ] 
+        [ "regex" "command" ] 
+        [ "regex" "command" ] 
+    ]]
 ```
 
 ssh-case takes a list of pairs, where each pair is a regex, and a command to run if that regex matches.  It is effectively a "case" statement that works on the remote machine.
@@ -242,6 +247,22 @@ Windows users can download an equivalent program called [Putty](http://www.chiar
           [displayln [send ssh get-transcript]]
           [exit 0]]]
 
+```
+
+## Run a command 1000 times, collect the output and print it
+
+```racket
+#lang racket
+[require srfi/1]
+[require "ssh-subprocess.rkt"]
+[ssh-script "" "remote.server.com" "user name" "nopass"
+        [lambda []
+          [send ssh set-echo-to-stdout #t]
+          [displayln [send ssh get-transcript]]
+          [wsn user-prompt "cd program/directory"]
+          [map [lambda [n] [wsn user-prompt "./command that must run a lot"]] [iota 1000]]
+          [displayln [send ssh get-transcript]]
+          [exit 0]]]
 ```
 
 # Bugs
