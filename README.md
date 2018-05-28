@@ -104,7 +104,7 @@ which waits until it sees "regex", then clears the transcript, sends "command" a
     [waitforsecs "regex" 60]
 ```
 
-allows you to choose the timeout.
+waits for 60 seconds for the regex to appear.
 
 # Advanced commands
 
@@ -204,7 +204,7 @@ Send a bytestring
 
     [send ssh get-transcript]
 
-Get the sessions transcript
+Get the session's transcript
 
     [send ssh clear-transcript]
 
@@ -313,4 +313,5 @@ Windows users can download an equivalent program called [Putty](http://www.chiar
 
 # Bugs
 
-ssh-ffi.rkt, the FFI interface to the SSH library, is currently broken and probably won't be repaired - it was incomplete, crashed often, and needed users to download a hard-to-find library.  It had a difficult API that required work-arounds to avoid blocking the entire racket interpreter.  The ssh subprocess wrapper is much more reliable, comes pre-installed on most systems, and has a simple API.
+There were two versins of this library, one using FFI, and the other simply wrapping an SSH subprocess.  ssh-ffi.rkt, the FFI interface to the SSH library, is currently broken and probably won't be repaired - it was incomplete, crashed often, and needed users to download a hard-to-find library.  It had a difficult API that required work-arounds to avoid blocking the entire racket interpreter.  The ssh subprocess wrapper is much more reliable, comes pre-installed on most systems, and has a simple API.  The instructions in this file are for the ssh wrapper library.
+
