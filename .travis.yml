@@ -7,5 +7,6 @@ before_install:
 - cat travis-racket/install-racket.sh | bash # pipe to bash not sh!
 
 script:
- - cd package && /usr/racket/bin/raco make sshscript.rkt
- - cd package && /usr/racket/bin/raco test -x .
+ - cd package 
+ - /usr/racket/bin/raco make sshscript.rkt
+ - /usr/racket/bin/raco test -x .
