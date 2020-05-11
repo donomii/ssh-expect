@@ -1,5 +1,5 @@
 #lang scribble/manual
-@(require (for-label "ssh.rkt"))
+@(require (for-label "sshscript.rkt"))
 @defmodule[my-lib/helper]
 @title{libSSH Binding}
  
