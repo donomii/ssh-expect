@@ -1,5 +1,5 @@
 #lang setup/infotab
-(define name "ssh")
+(define name "sshscript")
 (define blurb
   '("Bindings to the ssh library"))
 (define primary-file "ssh-ffi.rkt")
