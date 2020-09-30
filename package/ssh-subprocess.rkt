@@ -43,7 +43,7 @@
   ;CTRL-O: F (SI)
   
   ;also:  http://www.cs.tut.fi/~jkorpela/chars/c0.html
-  [define doDebug #f]
+  [define doDebug #t]
   [define debug [λ args [if doDebug
                             [begin [displayln ""][displayln args]]
     [λ args #t]]]]
@@ -116,8 +116,8 @@
         [letrec [[buff [make-bytes 80 32]]
                  [readbytes [read-bytes-avail!* buff a-chan]]]
           [if [equal? readbytes eof]
-              [begin [displayln "Link closed, exiting"]
-                     [exit 0]]
+              [begin [displayln "(Link closed, returning)"]
+                     #f]
                  [if [> readbytes 0]
                      [format "~a" [subbytes buff 0 readbytes]]
                      ""
@@ -146,11 +146,14 @@
                                       [let [[stuff  [receive-string a-chan]]]
                                         ;[display stuff stream-out]
                                         ;[set! transcript [string-append transcript stuff]]
-                                        [a-callback stuff]
+                                        [if [string? stuff]
+                                        [begin [a-callback stuff]
                                         ;[display stuff transcript-port]
-                                        ]
+                                        
                                       ;[sleep 0.001]  FIXME?
-                                      [readloop]]]]
+                                      [readloop]]
+
+                                      #f]]]]]
                    [readloop]
                    
                    ]
@@ -169,8 +172,8 @@
     (class object%
       (init )                ; initialization argument
       
-      (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [transmitter-thread #f] [transcript ""] [echo-to-stdout #t][conn-sleep 0.1]
-             [timeout 20][procvals #f][writeport #f][readport #f][killfunc #f][errport #f]) ; field
+      (field [sess #f] [chan #f] [server-address #f] [user #f] [password #f] [receiver-thread #f] [err-receiver-thread #f][transmitter-thread #f] [transcript ""] [echo-to-stdout #t][conn-sleep 0.1]
+             [timeout 99999][procvals #f][writeport #f][readport #f][killfunc #f][errport #f]) ; field
       [debug "Created ssh object"]
       (super-new)                ; superclass initialization
 
@@ -185,12 +188,13 @@
         [let [[cmd
                [if [or [equal? [system-type 'os] 'unix] [equal? [system-type 'os] 'macosx]]
                    [format "/usr/bin/ssh -t -t   ~a@~a" a-user a-server-address]
-                   [format "\"c:\\Program Files (x86)\\PuTTY\\plink.exe\"   ~a@~a" a-user a-server-address]]]]
+                   [format "\"c:\\Program Files\\PuTTY\\plink.exe\"   ~a@~a" a-user a-server-address]]]]
           ;[display cmd][newline]
           [set! procvals [process cmd]]]
         
         [write  [[fifth procvals] 'status] ][newline]
-        [debug "Connecting to remote server"]
+        [debug [format "Connecting to remote server ~a with user ~a" a-server-address a-user]]
+        [debug ]
         [set! writeport [second procvals]]
         [set! readport [first procvals]]
         [set! errport [fourth procvals]]
@@ -203,6 +207,9 @@
         [set! receiver-thread
               [make-receiver-thread readport
                                     [lambda [a-string]
+                                      [if [equal? a-string #f]
+                                          [close]
+                                          [begin
                                       [set! transcript [string-append transcript a-string]]
                                       
                                       [when echo-to-stdout
@@ -210,15 +217,15 @@
                                           ;[when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]]
                                           [display [remove-escapes a-string]]]]
                                       a-string
-                                      ]]]
+                                      ]]]]]
         
-        [set! receiver-thread
+        [set! err-receiver-thread
               [make-receiver-thread
                errport
                [lambda [a-string]
                  [set! transcript [string-append transcript a-string]]
-;                 [when echo-to-stdout [begin ;[when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]]
-;                                             [display [remove-escapes a-string]]]]
+                 [when echo-to-stdout [begin ;[when [< 0 [string-length a-string]][display [format "-- ~a --~n" server-address]]]
+                                             [display [remove-escapes a-string]]]]
                  ]]]
         
         [set! transmitter-thread [make-transmitter-thread writeport]]
