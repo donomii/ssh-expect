@@ -142,7 +142,7 @@
        (displayln (format "connected to docker"))
        (wsn "/ #" "apk update")
        (wsn "/ #"  "apk add openssh-client sshpass")
-       (wsn "/ #"  [format "ssh -o StrictHostKeyChecking=no %s@%s" user server])
+       (wsn "/ #"  [format "ssh -o StrictHostKeyChecking=no ~s@~s" user server])
        (wsn "assword" pass)
        (display (format "looged in to ~a" server))
         ;; Command: if 'grep' finds the service, we see the 'ps' line; 

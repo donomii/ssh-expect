@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 
         fprintf(stderr, "Child process: Attempting to execute: %s\n", argv[1]);
 
-        execvp(argv[1], argv);
+        execvp(argv[1], &argv[1]);
         perror("execvp");
         exit(1);
     } else { // Parent process
