@@ -226,16 +226,17 @@
                  ssh]]]
   
 
-  
-  [defmacro ssh-script [a-server an-ip a-user a-password thunk]  
-    `[letrec [
-              
+
+
+
+[defmacro ssh-script [a-server an-ip a-user a-password thunk]
+  `[letrec [
               [ssh [[make-login ,an-ip ,a-user ,a-password]]]
               [clear-transcript [lambda [] [send ssh clear-transcript]]]
               [s [lambda [a-string] [send ssh send-string a-string]]]
               [sb [lambda [a-string] [send ssh send-bytes a-string]]]
               [sn [lambda [a-string] [s a-string][s [format "~n"]]]]
-              
+
               [waitforsecs [lambda [a-string a-time]
                              [displayln [format "Waiting for '~a' in transcript '~a'" a-string [send ssh get-transcript]]]
                              [if [< a-time 0]
@@ -247,10 +248,29 @@
               [waitfor [lambda [a-string][waitforsecs a-string [get-field  timeout  ssh]]]]
               
               [wsn [lambda [a-string a-response-string]
-                     
                      [if [waitfor a-string]
                          [begin [send ssh clear-transcript][sn a-response-string]]
                          [error "Waitfor string timed out"]]]]
+
+[options [lambda [timeout . some-opts]  ;; ✅ Uses `.` to collect all remaining args
+  [call-with-escape-continuation [lambda [return]
+    [letrec [
+      [options-rec [lambda [timeout some-opts]
+        [map [lambda [a-pair]
+              [display [format "Checking for presence of '~a'" [first a-pair]]]
+              [when [string-contains? [send ssh get-transcript] [first a-pair]]
+                [begin
+[display [format "Found '~a', sending ~a" [first a-pair] [second a-pair]]]
+                  [send ssh clear-transcript]
+                  [sn [second a-pair]]
+                  [return #t]]]]
+            some-opts]
+        [sleep [get-field conn-sleep ssh]]
+        [when [> timeout 0]
+          [options-rec [sub1 timeout] some-opts]]]]]
+
+      [options-rec timeout some-opts]]]]]]  ;; ✅ Collects all args into a single list
+
 
               [ssh-case [lambda [some-opts]
                 [call-with-escape-continuation [lambda [return]         
@@ -259,21 +279,7 @@
                                    [waitforsecs [first a-pair] 1]]
                              [begin [send ssh clear-transcript][sn [second a-pair]] [return #t]]
                              ]] some-opts]
-                    ;[sleep [get-field conn-sleep ssh]]
-                    ;[ssh-case some-opts]
                                                  ]]]]
-               
-              [options-thunks [lambda [some-opts]
-                                [displayln "WTF"]
-                [call-with-escape-continuation [lambda [return]
-                    [map [lambda [a-pair]
-                           [when [with-handlers [[[const #t][const #f]]]
-                                   [waitforsecs [first a-pair] 1]]
-                             [begin [send ssh clear-transcript][[second a-pair]] [return #t]]
-                             ]] some-opts]
-                    [sleep [get-field conn-sleep ssh]]
-                    [options-thunks some-opts]]]]]
-              
 
               [this-server ,a-server]
               [root-prompt [format "root@~a" ,a-server]]

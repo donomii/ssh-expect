@@ -17,7 +17,7 @@ void *read_from_master(void *arg) {
     fprintf(stderr, "read_from_master thread started\n");
 
     while ((bytes_read = read(master_fd, buffer, sizeof(buffer))) > 0) {
-        fprintf(stderr, "read_from_master: read %zd bytes from master\n", bytes_read);
+        //fprintf(stderr, "read_from_master: read %zd bytes from master\n", bytes_read);
         write(STDOUT_FILENO, buffer, bytes_read);
     }
 
@@ -35,7 +35,7 @@ void *write_to_master(void *arg) {
     fprintf(stderr, "write_to_master thread started\n");
 
     while ((bytes_read = read(STDIN_FILENO, buffer, sizeof(buffer))) > 0) {
-        fprintf(stderr, "write_to_master: read %zd bytes from stdin\n", bytes_read);
+        //fprintf(stderr, "write_to_master: read %zd bytes from stdin\n", bytes_read);
         write(master_fd, buffer, bytes_read);
     }
 

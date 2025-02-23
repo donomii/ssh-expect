@@ -142,20 +142,25 @@
        (displayln (format "connected to docker"))
        (wsn "/ #" "apk update")
        (wsn "/ #"  "apk add openssh-client sshpass")
-       (wsn "/ #"  [format "ssh -o StrictHostKeyChecking=no ~s@~s" user server])
-       (wsn "assword" pass)
-       (display (format "looged in to ~a" server))
+       (wsn "/ #"  [format "ssh -o StrictHostKeyChecking=no ~a@~a" user server])
+
+       [options 500
+       '["ssh: connect to host" "echo hello"]
+       `("assword" ,pass)
+       ]
+       (display (format "logged in to ~a" server))
         ;; Command: if 'grep' finds the service, we see the 'ps' line; 
         ;; otherwise we echo NOTFOUND.
-        (sn (format "ps ax | grep -v grep | grep ~a" service-name))
-        (clear-transcript)
-        ;; Now wait until we see either "NOTFOUND" or some digits (PID in 'ps' output).
+        (wsn user-prompt (format "ps ax | grep -v grep | grep ~a" service-name))
         (waitfor user-prompt)
-        
+
+        ;; Now wait until we see either "NOTFOUND" or some digits (PID in 'ps' output).
+
         (define out (send ssh get-transcript))
+        (sn "exit")
         (send ssh close)
         out)))
-  
+
   (cond
     ;; If transcript has "NOTFOUND", the process wasn't found
     [(regexp-match? #px"NOTFOUND" result)
@@ -171,9 +176,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Some servers to manage
-(define my-servers '(
-                     ;("192.168.11.25" "user" "aaaaaa" "tower")
-  ("192.168.11.22" "void" "void" "void")))
+(define password-servers '(
+                     ("192.168.11.25" "user" "" "tower")
+  ;("192.168.11.22" "void" "" "void")
+  ))
+  (define  cert-servers '(
+    ;("" "user" "" "tower")
+
+  ))
 
 ;; Build a row that includes:
 ;;  - The server name
@@ -203,8 +213,11 @@
 ;; The main layout is a vbox of all the server rows
 (define (main-layout)
   (vbox
-   (for/list ([srv my-servers])
-     (server-row srv))))
+  (append
+    (for/list ([srv password-servers])
+      (server-row srv))
+   (for/list ([srv cert-servers])
+     (server-row srv)))))
 
 (define (main-page)
   (page "Cluster Manager"
